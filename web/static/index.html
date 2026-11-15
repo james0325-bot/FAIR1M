@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAIR1M 偵測</title>
+  <link rel="stylesheet" href="style.css">  <!-- 外觀 -->
+</head>
+<body>
+  <h1>FAIR1M 衛星影像物件偵測</h1>
+  <p>模型是用衛星／空拍影像訓練的，拿一般地面照片效果會很差。</p>
+
+  <!-- 兩種方式共用的信心門檻：低於這個分數的框不顯示 -->
+  <label>信心門檻 <input id="conf" type="range" min="0.1" max="0.9" step="0.05" value="0.25">
+    <span id="confText">0.25</span></label>
+
+  <h2>方式一：上傳照片</h2>
+  <input id="file" type="file" accept="image/*">
+  <canvas id="photo"></canvas>   <!-- 照片和偵測框都畫在這張畫布上 -->
+
+  <h2>方式二：相機即時辨識</h2>
+  <button id="camBtn">開啟相機</button>
+  <div class="stage">
+    <video id="video" autoplay playsinline muted></video>  <!-- 相機畫面 -->
+    <canvas id="overlay"></canvas>                         <!-- 疊在畫面上的偵測框 -->
+  </div>
+
+  <p id="msg"></p>  <!-- 顯示結果摘要或錯誤訊息 -->
+
+  <script src="app.js"></script>  <!-- 行為（放最後，確保上面的元素都已存在） -->
+</body>
+</html>

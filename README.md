@@ -147,6 +147,27 @@ yolo obb val model=runs/n640/weights/best.pt data=configs/fair1m5.yaml device=mp
 看 mAP50 與 mAP50-95，以及每個類別的表現。訓練結束時 `train.py` 會自動把每類別 AP 寫進 `runs/<名稱>/final_metrics.json`，`scripts/summarize.py` 彙整成 `runs/SUMMARY.md`。
 FAIR1M 官方測試集標註不公開，所以用自己留出的驗證集評估。
 
+## 網站：上傳照片或用相機辨識
+
+`web/` 是一個給初學者讀的小網站，前後端分離：
+
+| 檔案 | 角色 |
+|---|---|
+| `web/server.py` | 後端（FastAPI）：收圖片 → 模型辨識 → 回傳 JSON；同時把 `web/static/` 當網頁提供 |
+| `web/static/index.html` | 頁面結構 |
+| `web/static/style.css` | 外觀 |
+| `web/static/app.js` | 前端邏輯：上傳／相機 → 呼叫 `/api/detect` → 畫旋轉框 |
+
+```bash
+.venv/bin/pip install -r requirements-web.txt     # 只需裝一次
+.venv/bin/python web/server.py                    # 開 http://127.0.0.1:8000
+FAIR1M_WEIGHTS=runs/s640/weights/best.pt .venv/bin/python web/server.py   # 換模型
+```
+
+- 預設用 `runs/n640/weights/best.pt`，以 CPU 推論（訓練在用 GPU），啟動時載入一次；訓練出新權重後要重啟伺服器。
+- 只綁 `127.0.0.1`。瀏覽器只允許在 localhost（或 https）使用相機，不要直接把它開放到區網或網路上。
+- 模型用衛星／空拍影像訓練，一般地面照片幾乎不會有正確結果。
+
 ## 目前進度
 - [x] 環境（torch、ultralytics、MPS）
 - [x] 預訓練權重 `weights/yolov8n-obb.pt`

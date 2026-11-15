@@ -1,0 +1,6 @@
+/* 外觀：只負責排版，不含任何邏輯 */
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 16px; }
+canvas, video { width: 100%; display: block; }   /* 畫面縮放到容器寬度 */
+.stage { position: relative; }                   /* 讓 overlay 能疊在 video 上面 */
+#overlay { position: absolute; top: 0; left: 0; height: 100%; }
+#msg { font-weight: bold; }
