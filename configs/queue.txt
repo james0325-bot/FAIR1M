@@ -1,0 +1,19 @@
+# Training queue: one job per line   <run-name> <train.py arguments>
+# Read top to bottom by scripts/run_queue.sh; finished jobs (runs/<name>/DONE) are skipped.
+# Edit freely while the runner is running; it re-reads this file before each job.
+# Arguments: --model --imgsz --epochs --batch --fraction --patience --set key=value ...
+#
+# Stage 0: speed benchmarks (decide epoch counts from these)
+bench640 --model weights/yolov8n-obb.pt --imgsz 640 --epochs 1
+bench1024 --model weights/yolov8n-obb.pt --imgsz 1024 --epochs 1 --fraction 0.1
+#
+# Stage 1 (2026-11-15): baselines. Speed measured: 640px ~2.1 min/epoch, 1024px ~7 min/epoch (full data).
+n640 --model weights/yolov8n-obb.pt --imgsz 640 --epochs 100 --patience 30
+n1024 --model weights/yolov8n-obb.pt --imgsz 1024 --epochs 100 --patience 30
+#
+# Stage 2 (2026-11-15 20:15, queued so the GPU is never idle while the user is away until ~Fri 2026-11-20).
+# Time estimates (n-model measured, s/m scaled by FLOPs, unverified): s640 ~9h, s1024 ~28h, m640 ~33h.
+# Order = most valuable first; a job that fails 3 times (e.g. out of memory) is skipped automatically.
+s640 --model weights/yolov8s-obb.pt --imgsz 640 --epochs 100 --patience 30
+s1024 --model weights/yolov8s-obb.pt --imgsz 1024 --epochs 100 --patience 30
+m640 --model weights/yolov8m-obb.pt --imgsz 640 --epochs 100 --patience 30
