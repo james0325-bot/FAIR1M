@@ -27,6 +27,14 @@ def load(run):
 
 def main():
     out = []
+    # args.yaml of a resumed run says model=last.pt, so take the original model from its START line in history.log.
+    start_models = {}
+    hist = RUNS / "history.log"
+    if hist.exists():
+        for line in hist.read_text().splitlines():
+            parts = line.split()
+            if len(parts) > 4 and parts[2] == "START" and parts[4].startswith("model="):
+                start_models[parts[3]] = Path(parts[4][len("model="):]).name
     for run in sorted(p for p in RUNS.iterdir() if p.is_dir() and (p / "results.csv").exists()):
         rows, final = load(run)
         if not rows:
@@ -39,19 +47,23 @@ def main():
                 if ":" in line:
                     k, v = line.split(":", 1)
                     args[k.strip()] = v.strip()
+        # Ultralytics restarts the "time" column from ~0 on every resume, so add up each segment's last value.
+        t = [float(r["time"]) for r in rows]
+        secs = sum(t[i - 1] for i in range(1, len(t)) if t[i] < t[i - 1]) + t[-1]
         out.append({
-            "name": run.name, "model": Path(args.get("model", "?")).name, "imgsz": args.get("imgsz", "?"),
-            "epochs": f"{len(rows)}/{args.get('epochs', '?')}", "hours": float(rows[-1]["time"]) / 3600,
+            "name": run.name, "model": start_models.get(run.name, Path(args.get("model", "?")).name), "imgsz": args.get("imgsz", "?"),
+            "epochs": f"{len(rows)}/{args.get('epochs', '?')}", "hours": secs / 3600,
             "best_epoch": best["epoch"], "map50": float(best["metrics/mAP50(B)"]),
             "map5095": float(best["metrics/mAP50-95(B)"]),
-            "done": (run / "DONE").exists(), "per_class": (final or {}).get("per_class", {}),
+            "done": (run / "DONE").exists(), "stopped": (run / "STOPPED").exists(),
+            "per_class": (final or {}).get("per_class", {}),
         })
     out.sort(key=lambda r: -r["map5095"])
     lines = [f"# 訓練結果彙整（{time.strftime('%F %T')}）", "",
              "| run | 模型 | imgsz | epoch | 時間(h) | 最佳 epoch | mAP50 | mAP50-95 | 狀態 |", "|---|---|---|---|---|---|---|---|---|"]
     for r in out:
         lines.append(f"| {r['name']} | {r['model']} | {r['imgsz']} | {r['epochs']} | {r['hours']:.1f} | {r['best_epoch']} | "
-                     f"{r['map50']:.3f} | {r['map5095']:.3f} | {'完成' if r['done'] else '進行中/中斷'} |")
+                     f"{r['map50']:.3f} | {r['map5095']:.3f} | {'完成' if r['done'] else '提早停止' if r['stopped'] else '進行中/中斷'} |")
     lines += ["", "## 每類別 AP50（最終驗證，best.pt）", "", "| run | " + " | ".join(CLASSES) + " |", "|---|" + "---|" * len(CLASSES)]
     for r in out:
         pc = r["per_class"]

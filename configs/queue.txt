@@ -15,5 +15,14 @@ n1024 --model weights/yolov8n-obb.pt --imgsz 1024 --epochs 100 --patience 30
 # Time estimates (n-model measured, s/m scaled by FLOPs, unverified): s640 ~9h, s1024 ~28h, m640 ~33h.
 # Order = most valuable first; a job that fails 3 times (e.g. out of memory) is skipped automatically.
 s640 --model weights/yolov8s-obb.pt --imgsz 640 --epochs 100 --patience 30
-s1024 --model weights/yolov8s-obb.pt --imgsz 1024 --epochs 100 --patience 30
+# 2026-11-16: s1024 replaced by n1024b2 (n1024 at batch 4 hit MPS OOM x3; batch 2 + workers 0 to fit 8 GB). m640 stays after it.
+n1024b2 --model weights/yolov8n-obb.pt --imgsz 1024 --epochs 100 --patience 30 --batch 2 --workers 0
+# 2026-11-16: n640 for 300 epochs (n640 was still creeping up at epoch 97; est. ~11 h). patience 100 so it is not cut short.
+# 2026-11-16 22:39: n640e300 stopped early at epoch 128/300 (plateaued: best mAP50-95 0.577 at epoch 110 vs n640 0.575).
+#   Final val of best.pt done by hand -> runs/n640e300/final_metrics.json. Uncomment to resume from last.pt if ever needed.
+# n640e300 --model weights/yolov8n-obb.pt --imgsz 640 --epochs 300 --patience 100
+# 2026-11-16 22:40: s1024 back in (s helped road, 1024 helped ship/vehicle; combine). batch 2 + workers 0 as n1024b2 to fit 8 GB.
+#   Estimate from measured steady speeds (s640 ~252 s/epoch, n1024b2/n640 ~2.2x): ~555 s/epoch -> ~15 h, more if it hits OOM/swap.
+s1024 --model weights/yolov8s-obb.pt --imgsz 1024 --epochs 100 --patience 30 --batch 2 --workers 0
+# m640 estimate: ~2.75x s640 FLOPs -> ~19 h (unverified). Runs after s1024 (or right away if s1024 fails 3x).
 m640 --model weights/yolov8m-obb.pt --imgsz 640 --epochs 100 --patience 30
