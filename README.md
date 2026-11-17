@@ -30,7 +30,8 @@ configs/queue.txt ──► scripts/run_queue.sh ──► scripts/prepare_data.
 |---|---|
 | `configs/queue.txt` | 訓練清單，一行一個：`<名稱> --model … --imgsz … --epochs …`。執行器每次開工前重讀，可隨時增刪 |
 | `scripts/start_queue.sh` | 以新 session + `caffeinate` 啟動執行器；重複執行是安全的（已在跑就不動作） |
-| `scripts/run_queue.sh` | 依序跑清單；完成的放 `DONE` 標記並跳過；失敗 3 次就跳過；一次只允許一個執行器 |
+| `scripts/run_queue.sh` | 依序跑清單；完成的放 `DONE` 標記並跳過；失敗 3 次就跳過；一次只允許一個執行器；佇列結束時自動產生 `runs/SUMMARY.md`（執行中請勿編輯此檔） |
+| `scripts/watchdog.sh` | 每個訓練旁的看門狗：某個 epoch 明顯變慢（記憶體交換）就在存檔後重啟、從 `last.pt` 續跑（不算失敗）；到 `configs/deadline.txt` 的時間就在 epoch 邊界停止、驗證 best.pt 並結束佇列 |
 | `scripts/train.py` | 有 `last.pt` 就**續跑**，已完成的就只重做最終驗證；結束後把每類別 AP 寫進 `final_metrics.json` |
 | `scripts/prepare_data.sh` | 可重複執行：等待／續傳下載、驗證、轉換（有 `.complete` 標記就跳過） |
 | `scripts/convert_fair1m.py` | XML → 5 大類 OBB 標註，RGBA→RGB，大圖切片，9:1 依原圖切分，並產生 `configs/fair1m5.yaml` |
@@ -42,7 +43,7 @@ configs/queue.txt ──► scripts/run_queue.sh ──► scripts/prepare_data.
 ```bash
 bash scripts/status.sh                 # 現在在做什麼
 bash scripts/start_queue.sh            # 沒在跑時重新啟動（會自動續跑中斷的訓練）
-kill $(cat runs/queue.pid)             # 停止執行器（last.pt 保留，重啟即續）
+kill $(cat runs/queue.pid)             # 停止執行器與目前訓練（last.pt 保留，重啟即續）
 ```
 
 **各種中斷情況**
